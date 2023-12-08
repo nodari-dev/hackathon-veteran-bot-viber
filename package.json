@@ -1,0 +1,16 @@
+{
+  "name": "veteran-bot-viber",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-viber-bot-api": "^2.0.3",
+    "viber-bot": "^1.0.18"
+  }
+}
