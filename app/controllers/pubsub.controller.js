@@ -1,7 +1,7 @@
 const { PubSub } = require("@google-cloud/pubsub");
 
 exports.quickstart = async (
-  projectId = "your-project-id", // Your Google Cloud Platform project ID
+     projectId = process.env.PROJECT, // Your Google Cloud Platform project ID
     topicNameOrId = "my-topic", // Name for the new topic to create
     subscriptionName = "my-sub" // Name for the new subscription to create
 ) =>

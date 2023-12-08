@@ -1,6 +1,7 @@
 'use strict';
 
 require('dotenv').config();
+const { PubSub } = require("@google-cloud/pubsub");
 const ViberBot = require('viber-bot').Bot;
 const BotEvents = require('viber-bot').Events;
 
@@ -9,6 +10,11 @@ const UrlMessage = require('viber-bot').Message.Url;
 const KeyboardMessage = require('viber-bot').Message.Keyboard;
 
 const ngrok = require('./get_public_url');
+
+const mongoose = require('mongoose');
+mongoose.connect('mongodb+srv://mongouser:lgfQJqQpyTjnUTul@cluster0.b7ksl1g.mongodb.net/?retryWrites=true&w=majority');
+
+const StateMachine = mongoose.model('StateMachines', { name: String, id: String });
 
 const bot = new ViberBot({
   authToken: process.env.ACCESS_TOKEN,
@@ -35,7 +41,7 @@ bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) =>{
     }
 );
 
-bot.on(BotEvents.MESSAGE_RECEIVED, (message, response) => {
+bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
   if(message.text === "start"){
     const keyboard = {
       Type: 'keyboard',
@@ -51,6 +57,25 @@ bot.on(BotEvents.MESSAGE_RECEIVED, (message, response) => {
       DefaultHeight: true,
     };
     response.send(new KeyboardMessage(keyboard))
+
+    const projectId = "veteran-bot-407514";
+    const pubsub = new PubSub({ projectId });
+
+    const topic  = pubsub.topic("events.user_started");
+
+    await topic.publishMessage({json: {
+      "botType": "Viber",
+      "botUserId": response.userProfile.id,
+      "country": response.userProfile.country,
+      "nickname": response.userProfile.name
+    }});
+
+    const stateMachine = StateMachine( {
+      name: response.userProfile.name,
+      id: response.userProfile.id
+    });
+
+    await stateMachine.save();
   }
   // if (message.text === 'search') {
   //   conversationState = 'waitingForSearchInput'
