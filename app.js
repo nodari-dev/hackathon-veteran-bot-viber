@@ -16,38 +16,51 @@ const bot = new ViberBot({
   avatar: "https://developers.viber.com/docs/img/stickers/40122.png" // It is recommended to be 720x720, and no more than 100kb.
 });
 
-// bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) => {
-//   console.log("started conversation")
-
-//
-//   bot.send(new KeyboardMessage(keyboard));
-//
-//   onFinish();
-// });
-
 bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) =>{
-    const keyboard = {
-    Type: 'keyboard',
-    ButtonsGroupRows: 1,
-    BgColor: "#FFFFFF",
-    Buttons: [
-      {
-        ActionType: 'reply',
-        ActionBody: 'start',
-        Text: 'Розпочати',
-      },
-    ],
-  };
-    onFinish(
-        new KeyboardMessage(keyboard)
-    )
-}
+      const keyboard = {
+        Type: 'keyboard',
+        ButtonsGroupRows: 1,
+        BgColor: "#FFFFFF",
+        Buttons: [
+          {
+            ActionType: 'reply',
+            ActionBody: 'start',
+            Text: 'Розпочати',
+          },
+        ],
+      };
+      onFinish(
+          new KeyboardMessage(keyboard)
+      )
+    }
 );
 
 bot.on(BotEvents.MESSAGE_RECEIVED, (message, response) => {
   if(message.text === "start"){
-    response.send(new TextMessage("Привіт!"))
+    const keyboard = {
+      Type: 'keyboard',
+      ButtonsGroupRows: 1,
+      BgColor: "#FFFFFF",
+      Buttons: [
+        {
+          ActionType: 'reply',
+          ActionBody: 'search',
+          Text: 'Шукати',
+        },
+      ],
+      DefaultHeight: true,
+    };
+    response.send(new KeyboardMessage(keyboard))
   }
+  // if (message.text === 'search') {
+  //   conversationState = 'waitingForSearchInput'
+  //   response.send(new TextMessage('Please enter your search query:'));
+  // }
+  //
+  // if (message.text === 'test') {
+  //   conversationState = 'waitingForSearchInput'
+  //   response.send(new TextMessage('Please enter your search query:'));
+  // }
 });
 
 
