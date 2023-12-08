@@ -6,20 +6,9 @@ const BotEvents = require('viber-bot').Events;
 
 const TextMessage = require('viber-bot').Message.Text;
 const UrlMessage = require('viber-bot').Message.Url;
-const ContactMessage = require('viber-bot').Message.Contact;
-const PictureMessage = require('viber-bot').Message.Picture;
-const VideoMessage = require('viber-bot').Message.Video;
-const LocationMessage = require('viber-bot').Message.Location;
-const StickerMessage = require('viber-bot').Message.Sticker;
-const FileMessage = require('viber-bot').Message.File;
-const RichMediaMessage = require('viber-bot').Message.RichMedia;
 const KeyboardMessage = require('viber-bot').Message.Keyboard;
 
 const ngrok = require('./get_public_url');
-
-function say(response, message) {
-  response.send(new TextMessage(message));
-}
 
 const bot = new ViberBot({
   authToken: process.env.ACCESS_TOKEN,
@@ -27,30 +16,35 @@ const bot = new ViberBot({
   avatar: "https://developers.viber.com/docs/img/stickers/40122.png" // It is recommended to be 720x720, and no more than 100kb.
 });
 
-// The user will get those messages on first registration
-bot.onSubscribe(response => {
-  say(response, `Hi there ${response.userProfile.name}. I am ${bot.name}! Feel free to ask me if a web site is down for everyone or just you. Just send me a name of a website and I'll do the rest!`);
+bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) => {
+  const keyboard = {
+    Type: 'keyboard',
+    ButtonsGroupRows: ``,
+    BgColor: "#FFFFFF",
+    Buttons: [
+      {
+        ActionType: 'reply',
+        ActionBody: 'start',
+        Text: 'Розпочати',
+      },
+    ],
+  };
+
+  bot.sendMessage(userProfile, [
+    new TextMessage("some name"),
+    new KeyboardMessage(keyboard)
+  ]);
+
+  onFinish();
 });
 
-// Perfect! Now here's the key part:
 bot.on(BotEvents.MESSAGE_RECEIVED, (message, response) => {
-  // This sample bot can answer only text messages, let's make sure the user is aware of that.
-  if (!(message instanceof TextMessage)) {
-    say(response, `Sorry. I can only understand text messages.`);
-
-    if(message instanceof PictureMessage) {
-      say(response, `You sent picture message`);
-    }
+  console.log(message)
+  if(message.text === "start"){
+    response.send(new TextMessage("Привіт!"))
   }
 });
 
-bot.on(BotEvents.CONVERSATION_STARTED, (response, isSubscribed, userProfile) => {
-  say(response,"HI! ",response.userProfile.name, isSubscribed)
-});
-
-// bot.onTextMessage(/./, (message, response) => {
-//   checkUrlAvailability(response, message.text);
-// });
 
 bot.getBotProfile().then(response => console.log(`Bot Named: ${response.name}`));
 
