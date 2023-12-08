@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "node-viber-bot-api": "^2.0.3",
+    "dotenv": "^8.2.0",
     "viber-bot": "^1.0.18"
   }
 }
