@@ -16,10 +16,19 @@ const bot = new ViberBot({
   avatar: "https://developers.viber.com/docs/img/stickers/40122.png" // It is recommended to be 720x720, and no more than 100kb.
 });
 
-bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) => {
-  const keyboard = {
+// bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) => {
+//   console.log("started conversation")
+
+//
+//   bot.send(new KeyboardMessage(keyboard));
+//
+//   onFinish();
+// });
+
+bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) =>{
+    const keyboard = {
     Type: 'keyboard',
-    ButtonsGroupRows: ``,
+    ButtonsGroupRows: 1,
     BgColor: "#FFFFFF",
     Buttons: [
       {
@@ -29,17 +38,13 @@ bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) => {
       },
     ],
   };
-
-  bot.sendMessage(userProfile, [
-    new TextMessage("some name"),
-    new KeyboardMessage(keyboard)
-  ]);
-
-  onFinish();
-});
+    onFinish(
+        new KeyboardMessage(keyboard)
+    )
+}
+);
 
 bot.on(BotEvents.MESSAGE_RECEIVED, (message, response) => {
-  console.log(message)
   if(message.text === "start"){
     response.send(new TextMessage("Привіт!"))
   }
