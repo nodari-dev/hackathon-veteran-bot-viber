@@ -1,3 +1,3 @@
 module.exports = {
-  url: "mongodb://localhost:27017/track"
+  url: "mongodb+srv://mongouser:lgfQJqQpyTjnUTul@cluster0.b7ksl1g.mongodb.net/?retryWrites=true&w=majority"
 };

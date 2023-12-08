@@ -10,6 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "mongoose": "^6.11.1",
     "node-viber-bot-api": "^2.0.3",
     "dotenv": "^8.2.0",
     "viber-bot": "^1.0.18"
