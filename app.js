@@ -14,13 +14,17 @@ const ngrok = require('./get_public_url');
 const mongoose = require('mongoose');
 mongoose.connect('mongodb+srv://mongouser:lgfQJqQpyTjnUTul@cluster0.b7ksl1g.mongodb.net/?retryWrites=true&w=majority');
 
-const StateMachine = mongoose.model('StateMachines', { name: String, id: String });
+const StateMachine = mongoose.model('StateMachines', { name: String, id: String, userState: String });
 
 const bot = new ViberBot({
   authToken: process.env.ACCESS_TOKEN,
   name: "E-Ветеран Бот",
-  avatar: "https://developers.viber.com/docs/img/stickers/40122.png" // It is recommended to be 720x720, and no more than 100kb.
+  avatar: "https://developers.viber.com/docs/img/stickers/40122.png"
 });
+
+const projectId = "veteran-bot-407514";
+const pubsub = new PubSub({ projectId });
+const userStartedTopic = pubsub.topic("events.user_started");
 
 bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) =>{
       const keyboard = {
@@ -41,27 +45,23 @@ bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) =>{
     }
 );
 
+const getKeyboard = () => ({
+  Type: 'keyboard',
+  ButtonsGroupRows: 1,
+  BgColor: "#FFFFFF",
+  Buttons: [
+    {
+      ActionType: 'reply',
+      ActionBody: 'search',
+      Text: 'Шукати',
+    },
+  ],
+  DefaultHeight: true,
+})
+
 bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
   if(message.text === "start"){
-    const keyboard = {
-      Type: 'keyboard',
-      ButtonsGroupRows: 1,
-      BgColor: "#FFFFFF",
-      Buttons: [
-        {
-          ActionType: 'reply',
-          ActionBody: 'search',
-          Text: 'Шукати',
-        },
-      ],
-      DefaultHeight: true,
-    };
-    response.send(new KeyboardMessage(keyboard))
-
-    const projectId = "veteran-bot-407514";
-    const pubsub = new PubSub({ projectId });
-
-    const topic  = pubsub.topic("events.user_started");
+    response.send(new KeyboardMessage(getKeyboard()))
 
     await topic.publishMessage({json: {
       "botType": "Viber",
@@ -72,22 +72,29 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
 
     const stateMachine = StateMachine( {
       name: response.userProfile.name,
-      id: response.userProfile.id
+      id: response.userProfile.id,
+      userState: "WaitingForResponseAfterStartButton"
     });
 
     await stateMachine.save();
-  }
-  // if (message.text === 'search') {
-  //   conversationState = 'waitingForSearchInput'
-  //   response.send(new TextMessage('Please enter your search query:'));
-  // }
-  //
-  // if (message.text === 'test') {
-  //   conversationState = 'waitingForSearchInput'
-  //   response.send(new TextMessage('Please enter your search query:'));
-  // }
-});
 
+    // const [subscription] = await topic.createSubscription("events.user_started");
+    //
+    // // Receive callbacks for new messages on the subscription
+    // subscription.on('message', message => {
+    //   console.log('Received message:', message.data.toString());
+    //   process.exit(0);
+    // });
+  }
+
+  if (message.text === 'search') {
+    response.send(new TextMessage('Please enter your search query:', getKeyboard()));
+  }
+
+  if (message.text === 'test') {
+    response.send(new TextMessage('Please enter your search query:', getKeyboard()));
+  }
+});
 
 bot.getBotProfile().then(response => console.log(`Bot Named: ${response.name}`));
 
