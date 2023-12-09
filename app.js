@@ -32,7 +32,7 @@ const bot = new ViberBot({
 
 const projectId = "veteran-bot-407514";
 const pubsub = new PubSub({ projectId });
-const userStartedTopic = pubsub.topic("events.user_started");
+const userCreatedTopic = pubsub.topic("events.user_created");
 
 bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) => {
     const keyboard = {
@@ -224,7 +224,19 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
             },
           );
           users.save();
-
+          userCreatedTopic.publishMessage({
+            json: {
+              "botType": "Viber",
+              "botUserId": response.userProfile.id,
+              "nickname": response.userProfile.name,
+              "phoneNumber": stateMachine.phoneNumber,
+              "fullName": stateMachine.fullName,
+              "age": stateMachine.age,
+              "region": stateMachine.region,
+              "type": stateMachine.type,
+              "registrationDate": (new Date()),
+            },
+          });
           response.send([ new TextMessage("Вітаю, регійстрацію завершено, тепер Ви можете написати мені свої запитання") ]);
           break;
       }
