@@ -16,7 +16,7 @@ mongoose.connect("mongodb+srv://mongouser:lgfQJqQpyTjnUTul@cluster0.b7ksl1g.mong
 
 const StateMachine = mongoose.model(
   "StateMachines",
-  { userBotId: String, phoneNumber: String, state: String, fullName: String, age: String, isVeteran: String },
+  { userBotId: String, phoneNumber: String, state: String, fullName: String, age: String, type: String },
 );
 
 const bot = new ViberBot({
@@ -51,6 +51,7 @@ bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) => {
 const getKeyboard = () => ({
   Type: "keyboard",
   ButtonsGroupRows: 1,
+  ButtonsGroupColumns: 2,
   BgColor: "#ffffff",
   Buttons: [
     {
@@ -65,17 +66,18 @@ const getKeyboard = () => ({
 const isVeteranKeyboard = () => ({
   Type: "keyboard",
   ButtonsGroupRows: 1,
+  ButtonsGroupColumns: 2,
   BgColor: "#ffffff",
   Buttons: [
     {
       ActionType: "reply",
-      ActionBody: "action_is_veteran_yes",
-      Text: "Так",
+      ActionBody: "action_is_veteran",
+      Text: "Я ветеран",
     },
     {
       ActionType: "reply",
-      ActionBody: "action_is_veteran_no",
-      Text: "Ні",
+      ActionBody: "action_is_family_member",
+      Text: "Я член сім'ї",
     },
   ],
   DefaultHeight: true,
@@ -87,17 +89,17 @@ class SM {
   state = null;
   fullName = null;
   age = null;
-  isVeteran = null;
   region = null;
+  type = null;
 
-  constructor({ userBotId, phoneNumber, state, fullName, age, isVeteran, region }) {
+  constructor({ userBotId, phoneNumber, state, fullName, age, region, type }) {
     this.userBotId = userBotId;
     this.phoneNumber = phoneNumber;
     this.state = state;
     this.fullName = fullName;
     this.age = age;
-    this.isVeteran = isVeteran;
     this.region = region;
+    this.type = type;
   }
 
   get() {
@@ -107,8 +109,8 @@ class SM {
       state: this.state,
       fullName: this.fullName,
       age: this.age,
-      isVeteran: this.isVeteran,
       region: this.region,
+      type: this.type,
     };
   }
 }
@@ -161,11 +163,11 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
           stateMachine.state = "WaitingForInputAge";
 
           switch (message.text) {
-            case "action_is_veteran_yes":
-              stateMachine.isVeteran = true;
+            case "action_is_veteran":
+              stateMachine.type = "Veteran";
               break;
-            case "action_is_veteran_no":
-              stateMachine.isVeteran = false;
+            case "action_is_family_member":
+              stateMachine.type = "FamilyMember";
               break;
           }
 
