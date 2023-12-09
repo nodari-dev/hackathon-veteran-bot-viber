@@ -81,10 +81,6 @@ const isVeteranKeyboard = () => ({
   DefaultHeight: true,
 });
 
-const say = (response, text) => {
-  return response.send(new TextMessage(text));
-};
-
 class SM {
   userBotId = null;
   phoneNumber = null;
@@ -127,9 +123,7 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
           const repo = StateMachine({ ...stateMachine.get() });
 
           repo.save();
-          response.send([
-            new TextMessage("Введіть свій номер телефону"),
-          ]);
+          response.send([ new TextMessage("Введіть свій номер телефону") ]);
         }
       });
       break;
@@ -139,9 +133,7 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
         case "waitingForInputPhone":
           stateMachine.state = "waitingForInputFullName";
           if (!(/\+380\d{9}/.test(message.text))) {
-            response.send([
-              new TextMessage("Номер повинен починатись з +380"),
-            ]);
+            response.send([ new TextMessage("Номер повинен починатись з +380") ]);
             return;
           }
           stateMachine.phoneNumber = message.text;
@@ -149,9 +141,7 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
             { userBotId: response.userProfile.id },
             { ...stateMachine },
           );
-          response.send([
-            new TextMessage("Тепер введіть своє повне ім'я"),
-          ]);
+          response.send([ new TextMessage("Тепер введіть своє повне ім'я") ]);
           break;
         case "waitingForInputFullName":
           stateMachine.state = "waitingForInputIsVeteran";
@@ -162,9 +152,7 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
             { ...stateMachine },
           );
 
-          response.send([
-            new TextMessage("Ви ветеран?", isVeteranKeyboard())
-          ]);
+          response.send([ new TextMessage("Ви ветеран?", isVeteranKeyboard()) ]);
           break;
         case "waitingForInputIsVeteran":
           stateMachine.state = "WaitingForInputAge";
@@ -183,19 +171,15 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
             { ...stateMachine },
           );
 
-          response.send([
-            new TextMessage("Тепер введіть свій вік"),
-          ]);
+          response.send([ new TextMessage("Тепер введіть свій вік") ]);
           break;
         case "WaitingForInputAge":
-          stateMachine.state = "WaitingForInput";
+          stateMachine.state = "WaitingForInputRegion";
 
           if (parseInt(message.text)) {
             stateMachine.age = parseInt(message.text);
           } else {
-            response.send([
-              new TextMessage("Вік повинен бути додатнім числом дебик"),
-            ]);
+            response.send([ new TextMessage("Вік повинен бути додатнім числом дебик") ]);
             return;
           }
 
@@ -204,9 +188,18 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
             { ...stateMachine },
           );
 
-          response.send([
-            new TextMessage("Вітаю, регійстрацію завершено, тепер можете написати мені свої питання"),
-          ]);
+          response.send([ new TextMessage("Вкажіть ваш регіон") ]);
+          break;
+        case "WaitingForInputRegion":
+          stateMachine.state = "WaitingForInput";
+          stateMachine.region = message.text;
+
+          await StateMachine.findOneAndUpdate(
+            { userBotId: response.userProfile.id },
+            { ...stateMachine },
+          );
+
+          response.send([ new TextMessage("Вітаю, регійстрацію завершено, тепер можете написати мені свої питання") ]);
           break;
       }
       break;
