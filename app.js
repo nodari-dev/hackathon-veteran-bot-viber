@@ -16,12 +16,12 @@ mongoose.connect("mongodb+srv://mongouser:lgfQJqQpyTjnUTul@cluster0.b7ksl1g.mong
 
 const StateMachine = mongoose.model(
   "State_Machines",
-  { userBotId: String, phoneNumber: String, state: String, fullName: String, age: String, type: String },
+  { userBotId: String, phoneNumber: String, state: String, fullName: String, age: Number, type: String },
 );
 
 const Users = mongoose.model(
   "Users",
-  { userBotId: String, phoneNumber: String, state: String, fullName: String, age: String, type: String },
+  { userBotId: String, phoneNumber: String, state: String, fullName: String, age: Number, type: String },
 );
 
 const bot = new ViberBot({
@@ -92,6 +92,30 @@ const isVeteranKeyboard = () => ({
   DefaultHeight: true,
 });
 
+const proceedWithExistingAccountKeyboard = () => ({
+  Type: "keyboard",
+  BgColor: "#ffffff",
+  Buttons: [
+    {
+      Columns: 3,
+      Rows: 1,
+      ActionType: "reply",
+      ActionBody: "use_new_account",
+      Text: "Оновити дані",
+      TextSize: "regular",
+    },
+    {
+      Columns: 3,
+      Rows: 1,
+      ActionType: "reply",
+      ActionBody: "use_existing_account",
+      Text: "Продовжити з існуючим",
+      TextSize: "regular",
+    },
+  ],
+  DefaultHeight: true,
+});
+
 class SM {
   userBotId = null;
   phoneNumber = null;
@@ -127,24 +151,61 @@ class SM {
 bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
   switch (message.text) {
     case "action_start":
-      StateMachine.findOne({ userBotId: response.userProfile.id }).then((data) => {
+      StateMachine.findOne({ userBotId: response.userProfile.id }).then(async (data) => {
         if (!data) {
           const stateMachine = new SM({
             userBotId: response.userProfile.id,
-            state: "waitingForInputPhone",
+            state: "WaitingForInputPhone",
           });
 
-          const repo = StateMachine({ ...stateMachine.get() });
+          const repo = StateMachine({...stateMachine.get()});
 
           repo.save();
-          response.send([ new TextMessage("Введіть свій номер телефону") ]);
+          response.send([new TextMessage("Введіть свій номер телефону")]);
+        } else {
+          const stateMachine = new SM({
+            userBotId: response.userProfile.id,
+            state: "waitingForAccountAction",
+          });
+          await StateMachine.findOneAndUpdate(
+              {userBotId: response.userProfile.id},
+              {...stateMachine},
+          );
+          response.send([new TextMessage("Акаунт з цими даними вже існує", proceedWithExistingAccountKeyboard())]);
         }
       });
       break;
     default:
       const stateMachine = await StateMachine.findOne({ userBotId: response.userProfile.id });
       switch (stateMachine.state) {
-        case "waitingForInputPhone":
+        case "waitingForAccountAction":
+          if(message.text === "use_new_account"){
+            const stateMachine = new SM({
+              userBotId: response.userProfile.id,
+              state: "WaitingForInputPhone",
+            });
+            await StateMachine.findOneAndUpdate(
+                {userBotId: response.userProfile.id},
+                {...stateMachine},
+            );
+            response.send([ new TextMessage("Оновимо Ваші персональні дані!") ]);
+            response.send([ new TextMessage("Введіть свій номер телефону") ]);
+            break;
+          }
+          if(message.text === "use_existing_account"){
+            const stateMachine = new SM({
+              userBotId: response.userProfile.id,
+              state: "WaitingForInput",
+            });
+            await StateMachine.findOneAndUpdate(
+                { userBotId: response.userProfile.id },
+                { ...stateMachine },
+            );
+            response.send([ new TextMessage("Вітаємо у Вашому акаунті!", getKeyboard()) ]);
+            break;
+          }
+
+        case "WaitingForInputPhone":
           stateMachine.state = "waitingForInputFullName";
           if (!(/\+380\d{9}/.test(message.text))) {
             response.send([ new TextMessage("Номер повинен починатись з +380") ]);
@@ -152,8 +213,8 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
           }
           stateMachine.phoneNumber = message.text;
           await StateMachine.findOneAndUpdate(
-            { userBotId: response.userProfile.id },
-            { ...stateMachine },
+              { userBotId: response.userProfile.id },
+              { ...stateMachine },
           );
           response.send([ new TextMessage("Тепер введіть своє повне ім'я") ]);
           break;
@@ -190,10 +251,10 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
         case "WaitingForInputAge":
           stateMachine.state = "WaitingForInputRegion";
 
-          if (parseInt(message.text)) {
+          if (parseInt(message.text) && parseInt(message.text) < 120) {
             stateMachine.age = parseInt(message.text);
           } else {
-            response.send([ new TextMessage("Вік повинен бути додатнім числом!") ]);
+            response.send([ new TextMessage("Введіть правильний вік") ]);
             return;
           }
 
@@ -223,7 +284,26 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
               type: stateMachine.type,
             },
           );
-          users.save();
+
+          Users.findOne({ userBotId: response.userProfile.id }).then(async (data) => {
+            if (!data) {
+              users.save();
+            } else{
+              await Users.findOneAndUpdate(
+                  { userBotId: stateMachine.userBotId },
+                  {
+                    userBotId: stateMachine.userBotId,
+                    phoneNumber: stateMachine.phoneNumber,
+                    state: stateMachine.state,
+                    fullName: stateMachine.fullName,
+                    age: stateMachine.age,
+                    region: stateMachine.region,
+                    type: stateMachine.type,},
+                  { ...stateMachine },
+              );
+            }
+          })
+
           userCreatedTopic.publishMessage({
             json: {
               "botType": "Viber",
