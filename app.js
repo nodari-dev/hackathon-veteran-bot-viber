@@ -78,7 +78,7 @@ const isVeteranKeyboard = () => ({
       ActionType: "reply",
       ActionBody: "action_is_veteran",
       Text: "Я ветеран",
-      TextSize: "regular"
+      TextSize: "regular",
     },
     {
       Columns: 3,
@@ -86,7 +86,7 @@ const isVeteranKeyboard = () => ({
       ActionType: "reply",
       ActionBody: "action_is_family_member",
       Text: "Я член сім'ї",
-      TextSize: "regular"
+      TextSize: "regular",
     },
   ],
   DefaultHeight: true,
@@ -212,9 +212,18 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
             { userBotId: response.userProfile.id },
             { ...stateMachine },
           );
-
-          const users = Users({...stateMachine})
-          users.save()
+          const users = Users(
+            {
+              userBotId: stateMachine.userBotId,
+              phoneNumber: stateMachine.phoneNumber,
+              state: stateMachine.state,
+              fullName: stateMachine.fullName,
+              age: stateMachine.age,
+              region: stateMachine.region,
+              type: stateMachine.type,
+            },
+          );
+          users.save();
 
           response.send([ new TextMessage("Вітаю, регійстрацію завершено, тепер Ви можете написати мені свої запитання") ]);
           break;
