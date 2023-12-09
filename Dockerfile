@@ -19,6 +19,4 @@ RUN npm install --only=production
 
 COPY --from=base /app ./
 
-EXPOSE 3000
-
 ENTRYPOINT ["node","./app.js"]
