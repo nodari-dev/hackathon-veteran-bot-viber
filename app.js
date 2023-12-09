@@ -33,6 +33,7 @@ const bot = new ViberBot({
 const projectId = "veteran-bot-407514";
 const pubsub = new PubSub({ projectId });
 const userCreatedTopic = pubsub.topic("events.user_created");
+const questionSentTopic = pubsub.topic("events.user_message_sent");
 
 const startKeyboard = () => ({
   Type: "keyboard",
@@ -213,7 +214,7 @@ class SM {
 }
 
 bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
-  switch (message.text) {
+  switch (message.text){
     case "action_start":
       StateMachine.findOne({ userBotId: response.userProfile.id }).then(async (data) => {
         if (!data) {
@@ -438,9 +439,21 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
           stateMachine.state = "WaitingForInput";
 
           if(message.text !== "action_custom_request"){
-            console.log("SEND TO SERVICE", response.userProfile.id, message.text)
-
+            questionSentTopic.publishMessage({
+              json: {
+                "botType": "Viber",
+                "BotMessageId": message.token,
+                "phoneNumber": stateMachine.phoneNumber,
+                "fullName": stateMachine.fullName,
+                "isQuestion": true,
+                "text": message.text,
+                "Timestamp": (new Date()),
+              },
+            }
+            )
           }
+
+
           await StateMachine.findOneAndUpdate(
               { userBotId: response.userProfile.id },
               { ...stateMachine },
