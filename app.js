@@ -34,35 +34,95 @@ const projectId = "veteran-bot-407514";
 const pubsub = new PubSub({ projectId });
 const userCreatedTopic = pubsub.topic("events.user_created");
 
-bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) => {
-    const keyboard = {
-      Type: "keyboard",
-      ButtonsGroupRows: 1,
+const startKeyboard = () => ({
+  Type: "keyboard",
+  ButtonsGroupRows: 1,
+  BgColor: "#000000",
+  Buttons: [
+    {
+      ActionType: "reply",
+      ActionBody: "action_start",
+      Text: "Розпочати",
       BgColor: "#ffffff",
-      Buttons: [
-        {
-          ActionType: "reply",
-          ActionBody: "action_start",
-          Text: "Розпочати",
-        },
-      ],
-    };
+    },
+  ],
+});
+
+bot.onConversationStarted((userProfile, isSubscribed, context, onFinish) => {
     onFinish(
-      new KeyboardMessage(keyboard),
+      new KeyboardMessage(startKeyboard()),
     );
   },
 );
 
 const getKeyboard = () => ({
   Type: "keyboard",
-  ButtonsGroupRows: 1,
-  ButtonsGroupColumns: 2,
-  BgColor: "#ffffff",
+  BgColor: "#000000",
   Buttons: [
     {
+      Columns: 3,
+      Rows: 1,
       ActionType: "reply",
-      ActionBody: "action_search",
-      Text: "Знайти інформацію",
+      ActionBody: "action_info_psycho_rehabilitation",
+      Text: "Психологічна реабілітація",
+      BgColor: "#ffffff",
+    },
+    {
+      Columns: 3,
+      Rows: 1,
+      ActionType: "reply",
+      ActionBody: "action_info_adaptation",
+      Text: "Соціальна та професійна адаптації",
+      BgColor: "#ffffff",
+    },
+    {
+      Columns: 3,
+      Rows: 1,
+      ActionType: "reply",
+      ActionBody: "action_info_compensation",
+      Text: "Відшкодування вартості проїзду",
+      BgColor: "#ffffff",
+    },
+
+    {
+      Columns: 3,
+      Rows: 1,
+      ActionType: "reply",
+      ActionBody: "action_info_family_support",
+      Text: "Призначення одноразової грошової допомоги сім'ї, батькам загиблого (померлого)",
+      BgColor: "#ffffff",
+    },
+    {
+      Columns: 3,
+      Rows: 1,
+      ActionType: "reply",
+      ActionBody: "action_info_health",
+      Text: "Встановлення факту ушкодження здоров'я в АТО/ООС",
+      BgColor: "#ffffff",
+    },
+    {
+      Columns: 3,
+      Rows: 1,
+      ActionType: "reply",
+      ActionBody: "action_info_new_document",
+      Text: "Видача нового посвідчення ветеранам війни",
+      BgColor: "#ffffff",
+    },
+    {
+      Columns: 6,
+      Rows: 1,
+      ActionType: "reply",
+      ActionBody: "action_custom_request",
+      Text: "Звернутись до адміністратора з власним питанням",
+      BgColor: "#ffffff",
+    },
+    {
+      Columns: 6,
+      Rows: 1,
+      ActionType: "reply",
+      ActionBody: "action_start",
+      Text: "Мій акаунт",
+      BgColor: "#ffffff",
     },
   ],
   DefaultHeight: true,
@@ -70,7 +130,7 @@ const getKeyboard = () => ({
 
 const isVeteranKeyboard = () => ({
   Type: "keyboard",
-  BgColor: "#ffffff",
+  BgColor: "#000000",
   Buttons: [
     {
       Columns: 3,
@@ -79,6 +139,7 @@ const isVeteranKeyboard = () => ({
       ActionBody: "action_is_veteran",
       Text: "Я ветеран",
       TextSize: "regular",
+      BgColor: "#ffffff",
     },
     {
       Columns: 3,
@@ -87,6 +148,7 @@ const isVeteranKeyboard = () => ({
       ActionBody: "action_is_family_member",
       Text: "Я член сім'ї",
       TextSize: "regular",
+      BgColor: "#ffffff",
     },
   ],
   DefaultHeight: true,
@@ -94,7 +156,7 @@ const isVeteranKeyboard = () => ({
 
 const proceedWithExistingAccountKeyboard = () => ({
   Type: "keyboard",
-  BgColor: "#ffffff",
+  BgColor: "#000000",
   Buttons: [
     {
       Columns: 3,
@@ -103,14 +165,16 @@ const proceedWithExistingAccountKeyboard = () => ({
       ActionBody: "use_new_account",
       Text: "Оновити дані",
       TextSize: "regular",
+      BgColor: "#ffffff",
     },
     {
       Columns: 3,
       Rows: 1,
       ActionType: "reply",
       ActionBody: "use_existing_account",
-      Text: "Продовжити з існуючим",
+      Text: "Назад",
       TextSize: "regular",
+      BgColor: "#ffffff",
     },
   ],
   DefaultHeight: true,
@@ -153,6 +217,7 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
     case "action_start":
       StateMachine.findOne({ userBotId: response.userProfile.id }).then(async (data) => {
         if (!data) {
+          response.send([new TextMessage("Вітаю! Це EVeteran, Ваш супутник у шляху реабілітації. Моя мета - надати вам підтримку та корисну інформацію. Я готовий допомагати з питаннями щодо лікування, медичних закладів, а також забезпечити психологічну та правову підтримку. Не соромтеся питати, і ми разом зможемо подолати будь-які труднощі!", startKeyboard())])
           const stateMachine = new SM({
             userBotId: response.userProfile.id,
             state: "WaitingForInputPhone",
@@ -321,19 +386,67 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
           break;
 
         case "WaitingForInput":{
-          if(message.text === "action_search"){
-            stateMachine.state = "WaitingForSearchInput";
+          if(message.text === "action_info_psycho_rehabilitation"){
+            response.send(
+                [ new UrlMessage("https://guide.diia.gov.ua/view/psykholohichna-reabilitatsiia-postrazhdalykh-uchasnykiv-revoliutsii-hidnosti-uchasnykiv-antyterorystychnoi-operatsii-ta-osib-iak-ba1cfac5-db7c-4add-a2c4-0e82caa6d348",
+                    getKeyboard()) ]
+            );
+          }
+
+          if(message.text === "action_info_adaptation"){
+                response.send(
+                    [ new UrlMessage("https://guide.diia.gov.ua/view/vydacha-napravlennia-dlia-otrymannia-posluh-z-sotsialnoi-ta-profesiinoi-adaptatsii-5694af89-2e17-4d6d-b030-1effcf59ae77",
+                        getKeyboard()) ]
+                );
+          }
+          if(message.text === "action_info_compensation"){
+            response.send(
+                [ new UrlMessage("https://guide.diia.gov.ua/view/pryiniattia-rishennia-pro-vyplatu-hroshovoi-kompensatsii-vartosti-proizdu-postrazhdalykh-uchasnykiv-revoliutsii-hidnosti-veteran-a8fac003-b0f3-4059-a817-4bf60224aba7",
+                    getKeyboard()) ]
+            );
+          }
+          if(message.text === "action_info_family_support"){
+            response.send(
+                [ new UrlMessage("https://guide.diia.gov.ua/view/pryznachennia-odnorazovoi-hroshovoi-dopomohy-chlenam-simi-batkam-ta-utrymantsiam-volontera-zahybloho-pomerloho-vnaslidok-poranen-72d00da5-5d09-409e-bbcf-e08e556f4348",
+                    getKeyboard()) ]
+            );
+          }
+          if(message.text === "action_info_health"){
+            response.send(
+                [ new UrlMessage("https://guide.diia.gov.ua/view/vstanovlennia-faktu-oderzhannia-ushkodzhen-zdorovia-vid-boieprypasiv-na-terytorii-provedennia-antyterorystychnoi-operatsii-zdiis-6196768b-a503-467a-96a6-4f56bcc2ab8e",
+                    getKeyboard()) ]
+            );
+          }
+          if(message.text === "action_info_new_document"){
+            response.send(
+                [ new UrlMessage("https://guide.diia.gov.ua/view/vydacha-novoho-posvidchennia-uchasnykam-boiovykh-dii-osobam-z-invalidnistiu-vnaslidok-viiny-uchasnykam-viiny-chlenam-simi-zahybl-7b1c5940-62c0-48ae-b6bb-4776cd7a28f5",
+                    getKeyboard()) ]
+            );
+          }
+          if(message.text === "action_custom_request"){
+            stateMachine.state = "waitingForInputCustomRequest";
             await StateMachine.findOneAndUpdate(
                 { userBotId: response.userProfile.id },
                 { ...stateMachine },
             );
-            response.send([ new TextMessage("Що саме Вас цікавить?") ]);
+
+            response.send([ new TextMessage("Напишіть нам своє запитання, наші адміністратори надішлють Вам відповідь у чаті або зателефонують Вам", getKeyboard()) ]);
           }
           break;
         }
-        case "WaitingForSearchInput":{
-          console.log(message.text);
-          break;
+        case "waitingForInputCustomRequest":{
+          stateMachine.state = "WaitingForInput";
+
+          if(message.text !== "action_custom_request"){
+            console.log("SEND TO SERVICE", response.userProfile.id, message.text)
+
+          }
+          await StateMachine.findOneAndUpdate(
+              { userBotId: response.userProfile.id },
+              { ...stateMachine },
+          );
+
+          response.send([ new TextMessage("Дякуємо за повідомлення! Наші фахівці незабаром Вам напишуть або зателефонують", getKeyboard()) ]);
         }
       }
       break;
