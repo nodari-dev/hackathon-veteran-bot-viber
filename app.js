@@ -61,8 +61,8 @@ const getKeyboard = () => ({
   Buttons: [
     {
       ActionType: "reply",
-      ActionBody: "search",
-      Text: "Шукати",
+      ActionBody: "action_search",
+      Text: "Знайти інформацію",
     },
   ],
   DefaultHeight: true,
@@ -317,18 +317,26 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
               "registrationDate": (new Date()),
             },
           });
-          response.send([ new TextMessage("Вітаю, регійстрацію завершено, тепер Ви можете написати мені свої запитання") ]);
+          response.send([ new TextMessage("Вітаю, регійстрацію завершено, тепер Ви можете написати мені свої запитання", getKeyboard()) ]);
           break;
+
+        case "WaitingForInput":{
+          if(message.text === "action_search"){
+            stateMachine.state = "WaitingForSearchInput";
+            await StateMachine.findOneAndUpdate(
+                { userBotId: response.userProfile.id },
+                { ...stateMachine },
+            );
+            response.send([ new TextMessage("Що саме Вас цікавить?") ]);
+          }
+          break;
+        }
+        case "WaitingForSearchInput":{
+          console.log(message.text);
+          break;
+        }
       }
       break;
-  }
-
-  if (message.text === "search") {
-    response.send(new TextMessage("Please enter your search query:", getKeyboard()));
-  }
-
-  if (message.text === "test") {
-    response.send(new TextMessage("Please enter your search query:", getKeyboard()));
   }
 });
 
