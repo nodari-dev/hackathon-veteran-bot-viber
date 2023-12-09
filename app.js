@@ -15,7 +15,12 @@ const mongoose = require("mongoose");
 mongoose.connect("mongodb+srv://mongouser:lgfQJqQpyTjnUTul@cluster0.b7ksl1g.mongodb.net/?retryWrites=true&w=majority");
 
 const StateMachine = mongoose.model(
-  "StateMachines",
+  "State_Machines",
+  { userBotId: String, phoneNumber: String, state: String, fullName: String, age: String, isVeteran: String },
+);
+
+const Users = mongoose.model(
+  "Users",
   { userBotId: String, phoneNumber: String, state: String, fullName: String, age: String, isVeteran: String },
 );
 
@@ -201,6 +206,9 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
             { userBotId: response.userProfile.id },
             { ...stateMachine },
           );
+
+          const users = Users({...stateMachine})
+          users.save()
 
           response.send([ new TextMessage("Вітаю, регійстрацію завершено, тепер можете написати мені свої питання") ]);
           break;
