@@ -16,7 +16,7 @@ mongoose.connect("mongodb+srv://mongouser:lgfQJqQpyTjnUTul@cluster0.b7ksl1g.mong
 
 const StateMachine = mongoose.model(
   "StateMachines",
-  { userBotId: String, phoneNumber: String, state: String, fullName: "String", age: String, isVeteran: Boolean },
+  { userBotId: String, phoneNumber: String, state: String, fullName: String, age: String, isVeteran: String },
 );
 
 const bot = new ViberBot({
@@ -62,6 +62,25 @@ const getKeyboard = () => ({
   DefaultHeight: true,
 });
 
+const isVeteranKeyboard = () => ({
+  Type: "keyboard",
+  ButtonsGroupRows: 1,
+  BgColor: "#ffffff",
+  Buttons: [
+    {
+      ActionType: "reply",
+      ActionBody: "action_is_veteran_yes",
+      Text: "Так",
+    },
+    {
+      ActionType: "reply",
+      ActionBody: "action_is_veteran_no",
+      Text: "Ні",
+    },
+  ],
+  DefaultHeight: true,
+});
+
 const say = (response, text) => {
   return response.send(new TextMessage(text));
 };
@@ -98,8 +117,8 @@ class SM {
 bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
   switch (message.text) {
     case "action_start":
-      StateMachine.find({ userBotId: response.userProfile.id }).then((data) => {
-        if (!data.length) {
+      StateMachine.findOne({ userBotId: response.userProfile.id }).then((data) => {
+        if (!data) {
           const stateMachine = new SM({
             userBotId: response.userProfile.id,
             state: "waitingForInputPhone",
@@ -125,53 +144,73 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
             ]);
             return;
           }
-
           stateMachine.phoneNumber = message.text;
+          await StateMachine.findOneAndUpdate(
+            { userBotId: response.userProfile.id },
+            { ...stateMachine },
+          );
+          response.send([
+            new TextMessage("Тепер введіть своє повне ім'я"),
+          ]);
+          break;
+        case "waitingForInputFullName":
+          stateMachine.state = "waitingForInputIsVeteran";
+          stateMachine.fullName = message.text;
+
+          await StateMachine.findOneAndUpdate(
+            { userBotId: response.userProfile.id },
+            { ...stateMachine },
+          );
+
+          response.send([
+            new TextMessage("Ви ветеран?", isVeteranKeyboard())
+          ]);
+          break;
+        case "waitingForInputIsVeteran":
+          stateMachine.state = "WaitingForInputAge";
+
+          switch (message.text) {
+            case "action_is_veteran_yes":
+              stateMachine.isVeteran = true;
+              break;
+            case "action_is_veteran_no":
+              stateMachine.isVeteran = false;
+              break;
+          }
+
+          await StateMachine.findOneAndUpdate(
+            { userBotId: response.userProfile.id },
+            { ...stateMachine },
+          );
 
           response.send([
             new TextMessage("Тепер введіть свій вік"),
           ]);
+          break;
+        case "WaitingForInputAge":
+          stateMachine.state = "WaitingForInput";
+
+          if (parseInt(message.text)) {
+            stateMachine.age = parseInt(message.text);
+          } else {
+            response.send([
+              new TextMessage("Вік повинен бути додатнім числом дебик"),
+            ]);
+            return;
+          }
+
+          await StateMachine.findOneAndUpdate(
+            { userBotId: response.userProfile.id },
+            { ...stateMachine },
+          );
+
+          response.send([
+            new TextMessage("Вітаю, регійстрацію завершено, тепер можете написати мені свої питання"),
+          ]);
+          break;
       }
       break;
   }
-  // console.log(message, );
-  // let state;
-  // StateMachine.find({ id: response.userProfile.id }).then((data) => state = data[0]);
-  //
-  // switch (state) {
-  //   case "WaitingForResponseAfterStartButton":
-  //     console.log("aaaa");
-  //     break;
-  //
-  //   default:
-  //     break;
-  // }
-  // if(message.text === "start"){
-  //   response.send(new KeyboardMessage(getKeyboard()))
-  //
-  //   await topic.publishMessage({json: {
-  //     "botType": "Viber",
-  //     "botUserId": response.userProfile.id,
-  //     "country": response.userProfile.country,
-  //     "nickname": response.userProfile.name
-  //   }});
-  //
-  //   const stateMachine = StateMachine( {
-  //     name: response.userProfile.name,
-  //     id: response.userProfile.id,
-  //     userState: "WaitingForResponseAfterStartButton"
-  //   });
-  //
-  //   await stateMachine.save();
-  //
-  //   // const [subscription] = await topic.createSubscription("events.user_started");
-  //   //
-  //   // // Receive callbacks for new messages on the subscription
-  //   // subscription.on('message', message => {
-  //   //   console.log('Received message:', message.data.toString());
-  //   //   process.exit(0);
-  //   // });
-  // }
 
   if (message.text === "search") {
     response.send(new TextMessage("Please enter your search query:", getKeyboard()));
