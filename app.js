@@ -70,19 +70,23 @@ const getKeyboard = () => ({
 
 const isVeteranKeyboard = () => ({
   Type: "keyboard",
-  ButtonsGroupRows: 1,
-  ButtonsGroupColumns: 2,
   BgColor: "#ffffff",
   Buttons: [
     {
+      Columns: 3,
+      Rows: 1,
       ActionType: "reply",
       ActionBody: "action_is_veteran",
       Text: "Я ветеран",
+      TextSize: "regular"
     },
     {
+      Columns: 3,
+      Rows: 1,
       ActionType: "reply",
       ActionBody: "action_is_family_member",
       Text: "Я член сім'ї",
+      TextSize: "regular"
     },
   ],
   DefaultHeight: true,
@@ -162,7 +166,7 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
             { ...stateMachine },
           );
 
-          response.send([ new TextMessage("Ви ветеран?", isVeteranKeyboard()) ]);
+          response.send([ new TextMessage("Хто Ви?", isVeteranKeyboard()) ]);
           break;
         case "waitingForInputIsVeteran":
           stateMachine.state = "WaitingForInputAge";
@@ -189,7 +193,7 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
           if (parseInt(message.text)) {
             stateMachine.age = parseInt(message.text);
           } else {
-            response.send([ new TextMessage("Вік повинен бути додатнім числом дебик") ]);
+            response.send([ new TextMessage("Вік повинен бути додатнім числом!") ]);
             return;
           }
 
@@ -212,7 +216,7 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
           const users = Users({...stateMachine})
           users.save()
 
-          response.send([ new TextMessage("Вітаю, регійстрацію завершено, тепер можете написати мені свої питання") ]);
+          response.send([ new TextMessage("Вітаю, регійстрацію завершено, тепер Ви можете написати мені свої запитання") ]);
           break;
       }
       break;
