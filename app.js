@@ -14,7 +14,10 @@ const ngrok = require("./get_public_url");
 const mongoose = require("mongoose");
 mongoose.connect("mongodb+srv://mongouser:lgfQJqQpyTjnUTul@cluster0.b7ksl1g.mongodb.net/?retryWrites=true&w=majority");
 
-const StateMachine = mongoose.model("StateMachines", { name: String, id: String, userState: String });
+const StateMachine = mongoose.model(
+  "StateMachines",
+  { userBotId: String, phoneNumber: String, state: String, fullName: "String", age: String, isVeteran: Boolean },
+);
 
 const bot = new ViberBot({
   authToken: process.env.ACCESS_TOKEN,
@@ -64,12 +67,12 @@ const say = (response, text) => {
 };
 
 class SM {
-  userBotId;
-  phoneNumber;
-  state;
-  fullName;
-  age;
-  isVeteran;
+  userBotId = null;
+  phoneNumber = null;
+  state = null;
+  fullName = null;
+  age = null;
+  isVeteran = null;
 
   constructor({ userBotId, phoneNumber, state, fullName, age, isVeteran }) {
     this.userBotId = userBotId;
@@ -79,21 +82,30 @@ class SM {
     this.age = age;
     this.isVeteran = isVeteran;
   }
+
+  get() {
+    return {
+      userBotId: this.userBotId,
+      phoneNumber: this.phoneNumber,
+      state: this.state,
+      fullName: this.fullName,
+      age: this.age,
+      isVeteran: this.isVeteran,
+    };
+  }
 }
 
 bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
-
   switch (message.text) {
     case "action_start":
       StateMachine.find({ userBotId: response.userProfile.id }).then((data) => {
-        console.log("aaa", data, response.userProfile.id)
         if (!data.length) {
           const stateMachine = new SM({
             userBotId: response.userProfile.id,
             state: "waitingForInputPhone",
           });
 
-          const repo = StateMachine(stateMachine);
+          const repo = StateMachine({ ...stateMachine.get() });
 
           repo.save();
           response.send([
@@ -115,7 +127,6 @@ bot.on(BotEvents.MESSAGE_RECEIVED, async (message, response) => {
           }
 
           stateMachine.phoneNumber = message.text;
-          await stateMachine.update( stateMachine);
 
           response.send([
             new TextMessage("Тепер введіть свій вік"),
