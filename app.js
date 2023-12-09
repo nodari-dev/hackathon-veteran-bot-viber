@@ -88,14 +88,16 @@ class SM {
   fullName = null;
   age = null;
   isVeteran = null;
+  region = null;
 
-  constructor({ userBotId, phoneNumber, state, fullName, age, isVeteran }) {
+  constructor({ userBotId, phoneNumber, state, fullName, age, isVeteran, region }) {
     this.userBotId = userBotId;
     this.phoneNumber = phoneNumber;
     this.state = state;
     this.fullName = fullName;
     this.age = age;
     this.isVeteran = isVeteran;
+    this.region = region;
   }
 
   get() {
@@ -106,6 +108,7 @@ class SM {
       fullName: this.fullName,
       age: this.age,
       isVeteran: this.isVeteran,
+      region: this.region,
     };
   }
 }
